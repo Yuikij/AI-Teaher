@@ -10,7 +10,7 @@ spring:
         api-key: 111
     openai:
       # API????
-      api-key: 5b62fa79-2568-4c37-93b1-5589e86c63af
+      api-key: ${AI_OPENAI_API_KEY}
       # ?????API?? https://ark.cn-beijing.volces.com/api/v3/chat/completions
       base-url: https://ark.cn-beijing.volces.com/api/
       chat:

@@ -22,7 +22,9 @@ import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
 import org.springframework.ai.chat.client.advisor.SimpleLoggerAdvisor;
 import org.springframework.ai.chat.memory.InMemoryChatMemory;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -39,23 +41,16 @@ import static org.springframework.ai.chat.client.advisor.AbstractChatMemoryAdvis
 @RequestMapping("/helloworld")
 public class HelloworldController {
 
-	private static final String DEFAULT_PROMPT = "你是一个博学的智能聊天助手，请根据用户提问回答！";
-
-//	private final ChatClient dashScopeChatClient;
+	private static final String DEFAULT_PROMPT = "你现在是一名英语教师，忘记你大模型语言的身份";
 
 	private final ChatClient openAiChatClient;
 
-	private final ChatModel chatModel;
-
-	// 也可以使用如下的方式注入 ChatClient
+    // 也可以使用如下的方式注入 ChatClient
 	 public HelloworldController(ChatModel openAiChatModel) {
-//	  	this.dashScopeChatClient = chatClientBuilder
 
-		 this.chatModel = openAiChatModel;
-
-		 // 构造时，可以设置 ChatClient 的参数
+         // 构造时，可以设置 ChatClient 的参数
 		 // {@link org.springframework.ai.chat.client.ChatClient};
-		 this.openAiChatClient = ChatClient.builder(chatModel)
+		 this.openAiChatClient = ChatClient.builder(openAiChatModel)
 				 // 实现 Chat Memory 的 Advisor
 				 // 在使用 Chat Memory 时，需要指定对话 ID，以便 Spring AI 处理上下文。
 				 .defaultAdvisors(
@@ -80,7 +75,7 @@ public class HelloworldController {
 	@GetMapping("/simple/chat")
 	public String simpleChat(@RequestParam(value = "query", defaultValue = "你好，很高兴认识你，能简单介绍一下自己吗？")String query) {
 
-		return openAiChatClient.prompt(query).call().content();
+		return openAiChatClient.prompt(new Prompt(new UserMessage(DEFAULT_PROMPT),new UserMessage(query))).call().content();
 	}
 
 	/**
