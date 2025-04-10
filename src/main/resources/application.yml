@@ -1,0 +1,21 @@
+server:
+  port: 18080
+
+spring:
+  application:
+    name: AI-Teaher
+
+  ai:
+    dashscope:
+        api-key: 111
+    openai:
+      # API????
+      api-key: 5b62fa79-2568-4c37-93b1-5589e86c63af
+      # ?????API?? https://ark.cn-beijing.volces.com/api/v3/chat/completions
+      base-url: https://ark.cn-beijing.volces.com/api/
+      chat:
+        options:
+          # ??ID,???????????ID
+          model: doubao-1-5-lite-32k-250115
+        # Chat????,?OpenAI??????
+        completions-path: /v3/chat/completions
