@@ -1,0 +1,474 @@
+openapi: 3.0.3
+info:
+  title: AI-Teacher API
+  description: |
+    AI-Teacher is a Spring Boot application that provides AI-powered educational chat services through OpenAI integration. 
+    The application acts as an English teacher AI assistant that can engage in conversations with students, 
+    remember context across sessions, and provide both simple and streaming chat responses.
+    
+    ## Features
+    - Simple synchronous chat
+    - Streaming chat responses
+    - Memory-enabled conversations
+    - CORS support for web applications
+    - OpenAI integration with custom models
+    
+    ## Authentication
+    No authentication is currently required for the API endpoints.
+    
+    ## Rate Limiting
+    Rate limiting is handled by the underlying OpenAI API. Please refer to your OpenAI API key limits.
+  version: "1.0.0"
+  contact:
+    name: AI-Teacher Support
+    url: https://github.com/soukon/ai-teacher
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+
+servers:
+  - url: http://localhost:18080
+    description: Development server
+  - url: https://api.ai-teacher.example.com
+    description: Production server
+
+tags:
+  - name: chat
+    description: Chat operations with AI teacher
+  - name: health
+    description: Health check operations
+
+paths:
+  /helloworld/simple/chat:
+    get:
+      tags:
+        - chat
+      summary: Simple chat with AI teacher
+      description: |
+        Provides a simple synchronous chat interface with the AI teacher. 
+        The response is returned as plain text after the complete AI response is generated.
+      operationId: simpleChat
+      parameters:
+        - name: query
+          in: query
+          description: |
+            The user's question or message to send to the AI teacher.
+            If not provided, a default Chinese greeting will be used.
+          required: false
+          schema:
+            type: string
+            default: "你好，很高兴认识你，能简单介绍一下自己吗？"
+            example: "What is the difference between 'a' and 'an'?"
+            maxLength: 1000
+      responses:
+        '200':
+          description: Successful response from AI teacher
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Hello! I'm your English teacher. The difference between 'a' and 'an' is that 'a' is used before words that start with consonant sounds, while 'an' is used before words that start with vowel sounds. For example: 'a book' vs 'an apple'."
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error - AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /helloworld/stream/chat:
+    get:
+      tags:
+        - chat
+      summary: Streaming chat with AI teacher
+      description: |
+        Provides streaming chat responses for real-time interaction with the AI teacher.
+        The response is streamed as Server-Sent Events (SSE) allowing for progressive display of the AI's response.
+      operationId: streamChat
+      parameters:
+        - name: query
+          in: query
+          description: |
+            The user's question or message to send to the AI teacher.
+            If not provided, a default Chinese greeting will be used.
+          required: false
+          schema:
+            type: string
+            default: "你好，很高兴认识你，能简单介绍一下自己吗？"
+            example: "Explain the present perfect tense"
+            maxLength: 1000
+      responses:
+        '200':
+          description: Streaming response from AI teacher
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: binary
+                example: "The present perfect tense is used to describe actions that started in the past and continue to the present..."
+          headers:
+            Content-Type:
+              description: Content type for streaming response
+              schema:
+                type: string
+                example: "text/plain;charset=UTF-8"
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+                example: "no-cache"
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error - AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /helloworld/advisor/chat/{id}:
+    get:
+      tags:
+        - chat
+      summary: Memory-enabled chat with AI teacher
+      description: |
+        Provides chat functionality with conversation memory. The AI will remember previous 
+        conversations within the same session ID, allowing for contextual follow-up questions 
+        and maintaining conversation history.
+      operationId: advisorChat
+      parameters:
+        - name: id
+          in: path
+          description: |
+            Unique conversation identifier. Use the same ID across multiple requests 
+            to maintain conversation context and memory.
+          required: true
+          schema:
+            type: string
+            example: "user123"
+            pattern: "^[a-zA-Z0-9_-]+$"
+            maxLength: 50
+        - name: query
+          in: query
+          description: |
+            The user's question or message to send to the AI teacher.
+            This parameter is required for memory-enabled chat.
+          required: true
+          schema:
+            type: string
+            example: "Hello, my name is John"
+            maxLength: 1000
+      responses:
+        '200':
+          description: Streaming response from AI teacher with conversation memory
+          content:
+            text/plain:
+              schema:
+                type: string
+                format: binary
+                example: "Hello John! Nice to meet you. I'm your English teacher. How can I help you with your English studies today?"
+          headers:
+            Content-Type:
+              description: Content type for streaming response
+              schema:
+                type: string
+                example: "text/plain;charset=UTF-8"
+            Cache-Control:
+              description: Cache control header
+              schema:
+                type: string
+                example: "no-cache"
+        '400':
+          description: Bad request - invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error - AI service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /actuator/health:
+    get:
+      tags:
+        - health
+      summary: Health check endpoint
+      description: |
+        Returns the health status of the application and its dependencies.
+        This endpoint is automatically provided by Spring Boot Actuator.
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Application is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      description: Standard error response format
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp when the error occurred
+          example: "2023-01-01T10:00:00.000+00:00"
+        status:
+          type: integer
+          description: HTTP status code
+          example: 500
+        error:
+          type: string
+          description: Error type
+          example: "Internal Server Error"
+        message:
+          type: string
+          description: Error message
+          example: "AI service temporarily unavailable"
+        path:
+          type: string
+          description: Request path that caused the error
+          example: "/helloworld/simple/chat"
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+
+    HealthResponse:
+      type: object
+      description: Health check response
+      properties:
+        status:
+          type: string
+          enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+          description: Overall health status
+          example: "UP"
+        components:
+          type: object
+          description: Health status of individual components
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [UP, DOWN, OUT_OF_SERVICE, UNKNOWN]
+              details:
+                type: object
+                additionalProperties: true
+          example:
+            diskSpace:
+              status: "UP"
+              details:
+                total: 10737418240
+                free: 8589934592
+                threshold: 10485760
+            ping:
+              status: "UP"
+      required:
+        - status
+
+    ChatRequest:
+      type: object
+      description: Chat request object (for future POST endpoints)
+      properties:
+        query:
+          type: string
+          description: User's question or message
+          example: "What is the difference between 'good' and 'well'?"
+          maxLength: 1000
+        conversationId:
+          type: string
+          description: Conversation identifier for memory-enabled chat
+          example: "user123"
+          pattern: "^[a-zA-Z0-9_-]+$"
+          maxLength: 50
+        options:
+          type: object
+          description: Chat options
+          properties:
+            temperature:
+              type: number
+              format: float
+              description: Controls randomness in responses (0.0 to 1.0)
+              example: 0.7
+              minimum: 0.0
+              maximum: 1.0
+            maxTokens:
+              type: integer
+              description: Maximum number of tokens in response
+              example: 150
+              minimum: 1
+              maximum: 4000
+            streaming:
+              type: boolean
+              description: Whether to stream the response
+              example: true
+              default: false
+      required:
+        - query
+
+    ChatResponse:
+      type: object
+      description: Chat response object (for future structured responses)
+      properties:
+        response:
+          type: string
+          description: AI teacher's response
+          example: "The difference between 'good' and 'well' is that 'good' is an adjective while 'well' is an adverb."
+        conversationId:
+          type: string
+          description: Conversation identifier
+          example: "user123"
+        timestamp:
+          type: string
+          format: date-time
+          description: Response timestamp
+          example: "2023-01-01T10:00:00.000+00:00"
+        metadata:
+          type: object
+          description: Response metadata
+          properties:
+            model:
+              type: string
+              description: AI model used
+              example: "doubao-1-5-lite-32k-250115"
+            tokensUsed:
+              type: integer
+              description: Number of tokens used
+              example: 45
+            responseTime:
+              type: number
+              format: float
+              description: Response time in seconds
+              example: 1.234
+      required:
+        - response
+        - timestamp
+
+  parameters:
+    QueryParameter:
+      name: query
+      in: query
+      description: User's question or message to send to the AI teacher
+      required: false
+      schema:
+        type: string
+        maxLength: 1000
+      example: "What is the difference between 'a' and 'an'?"
+
+    ConversationIdParameter:
+      name: id
+      in: path
+      description: Unique conversation identifier for memory-enabled chat
+      required: true
+      schema:
+        type: string
+        pattern: "^[a-zA-Z0-9_-]+$"
+        maxLength: 50
+      example: "user123"
+
+  responses:
+    BadRequestError:
+      description: Bad request - invalid parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: "2023-01-01T10:00:00.000+00:00"
+            status: 400
+            error: "Bad Request"
+            message: "Invalid query parameter"
+            path: "/helloworld/simple/chat"
+
+    InternalServerError:
+      description: Internal server error - AI service unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: "2023-01-01T10:00:00.000+00:00"
+            status: 500
+            error: "Internal Server Error"
+            message: "AI service temporarily unavailable"
+            path: "/helloworld/simple/chat"
+
+    StreamingResponse:
+      description: Streaming text response
+      content:
+        text/plain:
+          schema:
+            type: string
+            format: binary
+      headers:
+        Content-Type:
+          description: Content type for streaming response
+          schema:
+            type: string
+            example: "text/plain;charset=UTF-8"
+        Cache-Control:
+          description: Cache control header
+          schema:
+            type: string
+            example: "no-cache"
+
+  examples:
+    SimpleGrammarQuestion:
+      summary: Simple grammar question
+      description: Basic English grammar question
+      value: "What is the difference between 'a' and 'an'?"
+
+    ComplexGrammarQuestion:
+      summary: Complex grammar question
+      description: More advanced English grammar question
+      value: "Explain the present perfect tense and provide examples"
+
+    ConversationStart:
+      summary: Start a conversation
+      description: Initial message to start a conversation with memory
+      value: "Hello, my name is John and I'm learning English"
+
+    ConversationFollowUp:
+      summary: Follow-up question
+      description: Follow-up question that relies on conversation memory
+      value: "What is my name?"
+
+    VocabularyQuestion:
+      summary: Vocabulary question
+      description: Question about English vocabulary
+      value: "What does 'serendipity' mean?"
+
+    PronunciationQuestion:
+      summary: Pronunciation question
+      description: Question about English pronunciation
+      value: "How do you pronounce 'colonel'?"
+
+security: []
+
+externalDocs:
+  description: Find more information about the AI-Teacher API
+  url: https://github.com/soukon/ai-teacher/blob/main/API_DOCUMENTATION.md
